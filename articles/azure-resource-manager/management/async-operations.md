@@ -46,7 +46,14 @@ When the `Retry-after` header isn't returned, [implement your own retry logic](/
 
 ## Permission for tracking async status
 
-To track the status of an asynchronous operation, you need sufficient permission at the resource group level. If you only have permission at the resource level, you can start the operation but you can't track its status. Resource group-level permission is required because the URL for tracking status isn't scoped to the resource.
+The identity which created the async operation is the only identy that can poll the status of the async operation, regardless of permissions. To track the status of an asynchronous operation, you need sufficient permission at the resource group level. If you only have permission at the resource level, you can start the operation but you can't track its status. Resource group-level permission is required because the URL for tracking status isn't scoped to the resource.
+
+> [!NOTE]
+> The identity which is used to create the asynchronous operation (PUT/PATCH/DELETE/POST) and the subsequent polling request status (get operation status/result) should be exactly the same. Any polling request with a different identity or is missing the identity will be rejected. If you have workloads which do not satisfy this requirement, please make the necessary changes to the identities used for polling so that they match the ones which are used for triggering async operations. Please ensure that polling URL is used as it was provided in the original response. The following tenant level Preview Feature can be used to stop the validation of async polling requests (Microsoft.Resources/BypassProtectedAsyncOperationPolling) [Preview Feature](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/preview-features?tabs=azure-portal). Please ensure to unregister from this feature upon making the necessary code changes.
+
+## Introduction
+Polling requests may fail either at gateway layer, or at the service layer. Gateway failures need to be investigated by ARM, while service failures should go to the team that owns the polling API.
+
 
 For example, to start a virtual machine, you need the Virtual Machine Contributor role for the resource group that contains the virtual machine. The URL for tracking a start request doesn't include the virtual machine in its path.
 
